@@ -19,9 +19,9 @@ import {
 } from "../src/index.js";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const executable = path.join(projectRoot, "scripts", "t3-session.js");
+const executable = path.join(projectRoot, "scripts", "t3-thread.js");
 
-function temporaryDirectory(prefix = "t3-session-phase6-") {
+function temporaryDirectory(prefix = "t3-thread-phase6-") {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
@@ -35,15 +35,15 @@ test("resolves isolated Claude and Codex skill destinations", () => {
   try {
     assert.equal(
       resolveSkillInstallTarget("claude", { homeDirectory: home }).destination,
-      path.join(home, ".claude", "skills", "t3-session"),
+      path.join(home, ".claude", "skills", "t3-thread"),
     );
     assert.equal(
       resolveSkillInstallTarget("codex", { homeDirectory: home, env: {} }).destination,
-      path.join(home, ".codex", "skills", "t3-session"),
+      path.join(home, ".codex", "skills", "t3-thread"),
     );
     assert.equal(
       resolveSkillInstallTarget("codex", { homeDirectory: home, env: { CODEX_HOME: codexHome } }).destination,
-      path.join(codexHome, "skills", "t3-session"),
+      path.join(codexHome, "skills", "t3-thread"),
     );
     assert.throws(() => resolveSkillInstallTarget("other", { homeDirectory: home }), ConfigurationError);
   } finally {
@@ -166,7 +166,7 @@ test("rejects a symlinked skills parent before writing outside the selected root
         && error.details.path === target.skillsRoot
         && error.details.reason === "symlink",
     );
-    assert.equal(fs.existsSync(path.join(outside, "t3-session")), false);
+    assert.equal(fs.existsSync(path.join(outside, "t3-thread")), false);
     assert.equal(fs.lstatSync(target.skillsRoot).isSymbolicLink(), true);
   } finally {
     cleanup(home);
@@ -176,7 +176,7 @@ test("rejects a symlinked skills parent before writing outside the selected root
 
 test("schema command emits bundled schemas without T3 storage", () => {
   for (const name of BUNDLED_SCHEMAS) {
-    const home = temporaryDirectory("t3-session-schema-home-");
+    const home = temporaryDirectory("t3-thread-schema-home-");
     try {
       const result = spawnSync(process.execPath, [executable, "schema", name], {
         cwd: projectRoot,
@@ -194,13 +194,13 @@ test("schema command emits bundled schemas without T3 storage", () => {
 });
 
 test("CLI install writes only to an isolated selected target", () => {
-  const home = temporaryDirectory("t3-session-cli-home-");
+  const home = temporaryDirectory("t3-thread-cli-home-");
   const result = spawnSync(process.execPath, [executable, "install", "--skills", "claude"], {
     cwd: projectRoot,
     env: { ...process.env, HOME: home },
     encoding: "utf8",
   });
-  const destination = path.join(home, ".claude", "skills", "t3-session");
+  const destination = path.join(home, ".claude", "skills", "t3-thread");
   try {
     assert.equal(result.status, 0);
     assert.equal(result.stderr, "");
@@ -215,7 +215,7 @@ test("CLI install writes only to an isolated selected target", () => {
     ]);
     assert.ok(lines.every((line) => !line.includes("\\n")));
     assert.equal(fs.existsSync(path.join(destination, "SKILL.md")), true);
-    assert.equal(fs.existsSync(path.join(home, ".codex", "skills", "t3-session")), false);
+    assert.equal(fs.existsSync(path.join(home, ".codex", "skills", "t3-thread")), false);
   } finally {
     cleanup(home);
   }

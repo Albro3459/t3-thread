@@ -1,4 +1,4 @@
-export const ERROR_SCHEMA_VERSION = "t3-session.error.v1";
+export const ERROR_SCHEMA_VERSION = "t3-thread.error.v1";
 
 export const EXIT_CODES = Object.freeze({
   SUCCESS: 0,
@@ -9,10 +9,10 @@ export const EXIT_CODES = Object.freeze({
   RAW_JSONL_PARTIALLY_UNREADABLE: 5,
 });
 
-export class T3SessionError extends Error {
-  constructor(message, { code = "T3_SESSION_ERROR", exitCode = EXIT_CODES.UNEXPECTED_FAILURE, details = {}, cause } = {}) {
+export class T3ThreadError extends Error {
+  constructor(message, { code = "T3_THREAD_ERROR", exitCode = EXIT_CODES.UNEXPECTED_FAILURE, details = {}, cause } = {}) {
     super(message, cause === undefined ? undefined : { cause });
-    this.name = "T3SessionError";
+    this.name = "T3ThreadError";
     this.code = code;
     this.exitCode = exitCode;
     this.details = details;
@@ -23,7 +23,7 @@ export class T3SessionError extends Error {
   }
 }
 
-export class ConfigurationError extends T3SessionError {
+export class ConfigurationError extends T3ThreadError {
   constructor(message, details = {}) {
     super(message, {
       code: "INVALID_CONFIGURATION",
@@ -34,7 +34,7 @@ export class ConfigurationError extends T3SessionError {
   }
 }
 
-export class InvalidArgumentsError extends T3SessionError {
+export class InvalidArgumentsError extends T3ThreadError {
   constructor(message, details = {}) {
     super(message, {
       code: "INVALID_ARGUMENTS",
@@ -53,7 +53,7 @@ export class UnknownCommandError extends InvalidArgumentsError {
   }
 }
 
-export class ThreadNotFoundError extends T3SessionError {
+export class ThreadNotFoundError extends T3ThreadError {
   constructor(threadId) {
     super("No thread matched the supplied ID.", {
       code: "THREAD_NOT_FOUND",
@@ -64,7 +64,7 @@ export class ThreadNotFoundError extends T3SessionError {
   }
 }
 
-export class DatabaseUnavailableError extends T3SessionError {
+export class DatabaseUnavailableError extends T3ThreadError {
   constructor(message, details = {}, cause) {
     super(message, {
       code: "DATABASE_UNAVAILABLE",
@@ -76,7 +76,7 @@ export class DatabaseUnavailableError extends T3SessionError {
   }
 }
 
-export class ProviderLogUnavailableError extends T3SessionError {
+export class ProviderLogUnavailableError extends T3ThreadError {
   constructor(threadId, filePath, reason, cause) {
     const missing = reason === "missing";
     super(missing ? "The provider log does not exist." : "The provider log is not readable.", {
@@ -94,7 +94,7 @@ export class ProviderLogUnavailableError extends T3SessionError {
   }
 }
 
-export class RawJsonlPartiallyUnreadableError extends T3SessionError {
+export class RawJsonlPartiallyUnreadableError extends T3ThreadError {
   constructor(threadId, filePath, warnings) {
     super("The provider JSONL contains unreadable records.", {
       code: "RAW_JSONL_PARTIALLY_UNREADABLE",
@@ -125,7 +125,7 @@ export class SchemaUnavailableError extends DatabaseUnavailableError {
   }
 }
 
-export class NotImplementedError extends T3SessionError {
+export class NotImplementedError extends T3ThreadError {
   constructor(command) {
     super(`The \"${command}\" command is not implemented yet.`, {
       code: "NOT_IMPLEMENTED",
@@ -136,24 +136,24 @@ export class NotImplementedError extends T3SessionError {
   }
 }
 
-export function isT3SessionError(error) {
-  return error instanceof T3SessionError;
+export function isT3ThreadError(error) {
+  return error instanceof T3ThreadError;
 }
 
-export function toT3SessionError(error) {
-  if (isT3SessionError(error)) {
+export function toT3ThreadError(error) {
+  if (isT3ThreadError(error)) {
     return error;
   }
 
   if (error instanceof Error) {
-    return new T3SessionError(error.message, { cause: error });
+    return new T3ThreadError(error.message, { cause: error });
   }
 
-  return new T3SessionError(String(error));
+  return new T3ThreadError(String(error));
 }
 
 export function serializeError(error) {
-  const normalized = toT3SessionError(error);
+  const normalized = toT3ThreadError(error);
   return {
     schemaVersion: ERROR_SCHEMA_VERSION,
     code: normalized.code,

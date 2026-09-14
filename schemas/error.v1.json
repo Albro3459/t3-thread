@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://t3-session.dev/schemas/error.v1.json",
-  "title": "t3-session error",
+  "$id": "https://t3-thread.dev/schemas/error.v1.json",
+  "title": "t3-thread error",
   "type": "object",
   "required": ["schemaVersion", "code", "message", "details"],
   "properties": {
-    "schemaVersion": { "const": "t3-session.error.v1" },
+    "schemaVersion": { "const": "t3-thread.error.v1" },
     "code": { "type": "string", "minLength": 1 },
     "message": { "type": "string", "minLength": 1 },
     "details": { "type": "object" }

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   chronologicalThreadEntries,
-  createT3SessionClient,
+  createT3ThreadClient,
   DatabaseUnavailableError,
   InvalidArgumentsError,
   ThreadNotFoundError,
@@ -55,7 +55,7 @@ test("--once emits a full baseline plus one live-state record and one end record
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, { once: true }));
 
     const threadUpserts = records.filter((r) => r.recordType === "thread");
@@ -89,7 +89,7 @@ test("--once emits a full baseline plus one live-state record and one end record
 test("baseline data records within a cycle are in chronological order", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(ACTIVE_THREAD_ID);
     const expectedIds = chronologicalThreadEntries(thread).map((entry) => entry.identifier);
 
@@ -117,7 +117,7 @@ test("a message appended between cycles is a single upsert and is not re-emitted
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     let sleepCalls = 0;
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 3,
@@ -154,7 +154,7 @@ test("a message whose text changes in place is re-emitted as upsert even though 
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 2,
       sleep: async (ms) => {
@@ -178,7 +178,7 @@ test("a turn state change between cycles is emitted", async () => {
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 2,
       sleep: async (ms) => {
@@ -201,7 +201,7 @@ test("an unchanged cycle emits no data records", async () => {
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 2,
       sleep: async (ms) => clock.advance(ms),
@@ -220,7 +220,7 @@ test("a live-state record is emitted in cycle 1 and again only when live state c
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     let sleepCalls = 0;
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 3,
@@ -248,7 +248,7 @@ test("--max-cycles stops after exactly n cycles with reason max-cycles", async (
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 2,
       sleep: async (ms) => clock.advance(ms),
@@ -268,7 +268,7 @@ test("--timeout stops with reason timeout using an injected clock", async () => 
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       timeoutMs: 2500,
       intervalMs: 1000,
@@ -288,7 +288,7 @@ test("aborting through an AbortSignal during sleep yields exactly one end record
   try {
     const clock = createClock();
     const controller = new AbortController();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       signal: controller.signal,
       sleep: async (ms) => {
@@ -310,7 +310,7 @@ test("an already-aborted signal yields exactly one end record before any cycle r
   try {
     const controller = new AbortController();
     controller.abort();
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, { signal: controller.signal }));
 
     assert.equal(records.length, 1);
@@ -327,7 +327,7 @@ test("a thread deleted mid-tail ends with reason thread-not-found and exit code 
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const tail = client.tailThread(ACTIVE_THREAD_ID, {
       sleep: async (ms) => {
         clock.advance(ms);
@@ -357,7 +357,7 @@ test("a thread deleted mid-tail ends with reason thread-not-found and exit code 
 test("a thread missing on the first cycle throws without emitting an end record", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const tail = client.tailThread("missing-thread-0001", { once: true });
 
     const records = [];
@@ -382,7 +382,7 @@ test("three consecutive transient failures are retried with diagnostics and the 
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const diagnostics = [];
     const tail = client.tailThread(ACTIVE_THREAD_ID, {
       onDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
@@ -404,7 +404,7 @@ test("three consecutive transient failures are retried with diagnostics and the 
 
     assert.equal(diagnostics.length, 3);
     for (const diagnostic of diagnostics) {
-      assert.equal(diagnostic.schemaVersion, "t3-session.error.v1");
+      assert.equal(diagnostic.schemaVersion, "t3-thread.error.v1");
       assert.equal(diagnostic.code, "DATABASE_UNAVAILABLE");
     }
     assert.ok(caughtError instanceof DatabaseUnavailableError);
@@ -419,7 +419,7 @@ test("a transient failure followed by a success resets the consecutive-failure c
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     let attempt = 0;
     const diagnostics = [];
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
@@ -448,7 +448,7 @@ test("a transient failure followed by a success resets the consecutive-failure c
 test("--turn-limit bounds each cycle to the newest turns", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const records = await collect(client.tailThread(WINDOW_THREAD_ID, { once: true, turnLimit: 1 }));
 
     const turnUpserts = records.filter((r) => r.recordType === "turn");
@@ -479,7 +479,7 @@ test("every emitted record validates against schemas/tail-record.v1.json", async
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 3,
       sleep: async (ms) => {
@@ -509,7 +509,7 @@ test("tail never opens the provider JSONL log", async () => {
   assert.ok(!tailSource.includes("providerLog"));
 
   const fixture = createFixtureDatabase();
-  const homeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-session-home-"));
+  const homeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-thread-home-"));
   try {
     const providerLogDirectory = path.join(homeDirectory, "userdata", "logs", "provider");
     fs.mkdirSync(providerLogDirectory, { recursive: true });
@@ -518,7 +518,7 @@ test("tail never opens the provider JSONL log", async () => {
       "{ not valid json\n",
     );
 
-    const client = await createT3SessionClient({ home: homeDirectory, db: fixture.databasePath });
+    const client = await createT3ThreadClient({ home: homeDirectory, db: fixture.databasePath });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, { once: true }));
 
     const endRecord = records.find((r) => r.op === "end");
@@ -537,7 +537,7 @@ test("tail never opens the provider JSONL log", async () => {
 test("invalid tail options are rejected synchronously before any iteration or SQLite access", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
 
     assert.throws(
       () => client.tailThread(ACTIVE_THREAD_ID, { once: true, maxCycles: 2 }),

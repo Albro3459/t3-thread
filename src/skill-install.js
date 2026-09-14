@@ -4,9 +4,9 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { ConfigurationError, T3SessionError } from "./errors.js";
+import { ConfigurationError, T3ThreadError } from "./errors.js";
 
-export const SKILL_NAME = "t3-session";
+export const SKILL_NAME = "t3-thread";
 export const SKILL_FILES = Object.freeze([
   "SKILL.md",
   "references/cli.md",
@@ -17,7 +17,7 @@ export const SKILL_FILES = Object.freeze([
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BUNDLED_SKILL_ROOT = path.join(PACKAGE_ROOT, "skills", SKILL_NAME);
 
-export class SkillInstallationError extends T3SessionError {
+export class SkillInstallationError extends T3ThreadError {
   constructor(message, details = {}, cause) {
     super(message, {
       code: "SKILL_INSTALL_FAILED",
@@ -190,7 +190,7 @@ function assertNoSymlinkedSkillParent(skillsRoot, details) {
         );
       }
     } catch (error) {
-      if (error instanceof T3SessionError) throw error;
+      if (error instanceof T3ThreadError) throw error;
       if (error?.code !== "ENOENT") throw error;
     }
 
@@ -267,7 +267,7 @@ export function installBundledSkill(agent, {
     if (backupPath && !existingPath(destination) && existingPath(backupPath)) {
       fs.renameSync(backupPath, destination);
     }
-    if (error instanceof T3SessionError) throw error;
+    if (error instanceof T3ThreadError) throw error;
     throw new SkillInstallationError("Unable to install the bundled skill.", {
       agent,
       source,

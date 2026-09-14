@@ -1,8 +1,8 @@
 import { VERSION } from "./version.js";
 
-const SCHEMA_VERSION = "t3-session.thread.v1";
-const LIST_SCHEMA_VERSION = "t3-session.list.v1";
-const FIND_SCHEMA_VERSION = "t3-session.find.v1";
+const SCHEMA_VERSION = "t3-thread.thread.v1";
+const LIST_SCHEMA_VERSION = "t3-thread.list.v1";
+const FIND_SCHEMA_VERSION = "t3-thread.find.v1";
 
 // A turn state outside this set is treated as non-terminal, because reporting an
 // unfinished thread as settled is the more damaging error.

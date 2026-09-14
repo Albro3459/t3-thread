@@ -7,7 +7,7 @@ import test from "node:test";
 import {
   EXIT_CODES,
   ProviderLogUnavailableError,
-  createT3SessionClient,
+  createT3ThreadClient,
   parseProviderJsonl,
   readProviderJsonl,
   resolveConfig,
@@ -17,7 +17,7 @@ import {
 const THREAD_ID = "sanitized-provider-thread-0001";
 
 function createHome() {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-session-provider-"));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-thread-provider-"));
   return {
     directory,
     home: path.join(directory, "home"),
@@ -91,7 +91,7 @@ test("readRawJsonl resolves the exact provider log and keeps malformed lines out
       "[broken] CANON: nope",
       "[two] NTIVE: {\"value\":2}",
     ].join("\n"));
-    const client = await createT3SessionClient({ home: fixture.home });
+    const client = await createT3ThreadClient({ home: fixture.home });
     const result = await client.readRawJsonl(THREAD_ID);
 
     assert.equal(result.path, filePath);
@@ -122,7 +122,7 @@ test("readRawJsonl resolves the exact provider log and keeps malformed lines out
 test("distinguishes missing and unreadable provider logs without discovery", async () => {
   const missingFixture = createHome();
   try {
-    const client = await createT3SessionClient({ home: missingFixture.home });
+    const client = await createT3ThreadClient({ home: missingFixture.home });
     await assert.rejects(
       () => client.readRawJsonl(THREAD_ID),
       (error) => error instanceof ProviderLogUnavailableError
@@ -140,7 +140,7 @@ test("distinguishes missing and unreadable provider logs without discovery", asy
     const { filePath } = writeLog(unreadableFixture, "");
     fs.unlinkSync(filePath);
     fs.mkdirSync(filePath);
-    const client = await createT3SessionClient({ home: unreadableFixture.home });
+    const client = await createT3ThreadClient({ home: unreadableFixture.home });
     await assert.rejects(
       () => client.readRawJsonl(THREAD_ID),
       (error) => error instanceof ProviderLogUnavailableError

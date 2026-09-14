@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { createT3SessionClient } from "../src/index.js";
+import { createT3ThreadClient } from "../src/index.js";
 import {
   ACTIVE_PROVIDER_STATUSES,
   isActiveProviderStatus,
@@ -44,7 +44,7 @@ function cleanupFixture(fixture) {
 test("a settled thread reports complete, idle, and no reasons", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(ACTIVE_THREAD_ID);
 
     assert.equal(thread.liveState.complete, true);
@@ -65,7 +65,7 @@ test("a non-terminal latest turn reports turn-not-terminal in isolation", async 
     setSessionStatus(fixture.databasePath, WINDOW_THREAD_ID, "ready");
     updateMessage(fixture.databasePath, "wextra-3", { isStreaming: 0 });
 
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(WINDOW_THREAD_ID);
 
     assert.equal(thread.liveState.complete, false);
@@ -90,7 +90,7 @@ test("a streaming message reports streaming-message in isolation", async () => {
       updatedAt: "2026-01-01T00:02:31.000Z",
     });
 
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(ACTIVE_THREAD_ID);
 
     assert.equal(thread.liveState.complete, false);
@@ -106,7 +106,7 @@ test("an active provider session reports provider-active in isolation", async ()
   try {
     setSessionStatus(fixture.databasePath, ACTIVE_THREAD_ID, "running");
 
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(ACTIVE_THREAD_ID);
 
     assert.equal(thread.liveState.complete, false);
@@ -120,7 +120,7 @@ test("an active provider session reports provider-active in isolation", async ()
 test("multiple simultaneous signals produce a sorted, deduplicated reasons array", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(WINDOW_THREAD_ID);
 
     assert.deepEqual(thread.liveState.reasons, [
@@ -140,7 +140,7 @@ test("an unrecognised turn state is treated as non-terminal", async () => {
   try {
     setTurnState(fixture.databasePath, WINDOW_THREAD_ID, "wturn-3", "gremlin");
 
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(WINDOW_THREAD_ID);
 
     assert.equal(thread.liveState.latestTurnState, "gremlin");
@@ -153,7 +153,7 @@ test("an unrecognised turn state is treated as non-terminal", async () => {
 test("a null or unresolved latest_turn_id falls back to the newest turn by ordering key", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
 
     setThreadLatestTurn(fixture.databasePath, WINDOW_THREAD_ID, null);
     const nullFallback = await client.getThread(WINDOW_THREAD_ID);
@@ -170,7 +170,7 @@ test("a null or unresolved latest_turn_id falls back to the newest turn by order
 test("a bounded read reports the same liveState as a full read of the same thread", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: FIXED_NOW });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: FIXED_NOW });
 
     const fullRead = await client.getThread(WINDOW_THREAD_ID);
     const lastTurnRead = await client.getThread(WINDOW_THREAD_ID, { lastTurn: true });
@@ -188,7 +188,7 @@ test("a bounded read reports the same liveState as a full read of the same threa
 test("observedAt is injectable, deterministic, and identical across reads with the same clock", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: FIXED_NOW });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: FIXED_NOW });
 
     const first = await client.getThread(ACTIVE_THREAD_ID);
     const second = await client.getThread(ACTIVE_THREAD_ID);
@@ -204,7 +204,7 @@ test("observedAt is injectable, deterministic, and identical across reads with t
 test("liveState is present on every getThread() result", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
 
     const fullRead = await client.getThread(ACTIVE_THREAD_ID);
     assert.ok(Object.hasOwn(fullRead, "liveState"));
@@ -276,7 +276,7 @@ test("live state is not inferred from timestamp recency", async () => {
       .run("2026-08-12T09:59:59.999Z", ACTIVE_THREAD_ID);
     database.close();
 
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: FIXED_NOW });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: FIXED_NOW });
     const thread = await client.getThread(ACTIVE_THREAD_ID);
 
     assert.equal(thread.thread.updatedAt, "2026-08-12T09:59:59.999Z");
@@ -290,7 +290,7 @@ test("live state is not inferred from timestamp recency", async () => {
 test("liveState conforms to the schemas/thread.v1.json liveState contract", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(WINDOW_THREAD_ID);
     const liveStateSchema = threadSchema.properties.liveState;
 

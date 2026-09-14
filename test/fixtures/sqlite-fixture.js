@@ -15,7 +15,7 @@ export const DELETED_PROJECT_TWO_THREAD_ID = "deleted-project-two-thread-0001";
 export const PROJECT_TWO_TITLE = "CodeLaunch";
 
 export function createFixtureDatabase() {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-session-"));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-thread-"));
   const databasePath = path.join(directory, "state.sqlite");
   const database = new DatabaseSync(databasePath);
 

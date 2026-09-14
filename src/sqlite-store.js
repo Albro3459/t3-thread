@@ -418,7 +418,7 @@ function queryAll(database, sql, parameters, operation) {
 // DEFERRED, validate the required schema, then the caller's read, with ROLLBACK and close
 // guaranteed afterward. A BEGIN or ROLLBACK failure classifies as DatabaseUnavailableError the
 // same way queryAll classifies a failed SELECT. If the read body already threw (a classified
-// error or otherwise), a later ROLLBACK or close failure is swallowed rather than replacing it —
+// error or otherwise), a later ROLLBACK or close failure is swallowed rather than replacing it -
 // the error already in flight always wins.
 export function runReadTransaction(database, operation, run) {
   let transactionStarted = false;

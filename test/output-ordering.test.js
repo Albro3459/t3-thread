@@ -37,7 +37,7 @@ function assertValidJsonlRecord(record) {
 
 function baseThread(overrides = {}) {
   return {
-    schemaVersion: "t3-session.thread.v1",
+    schemaVersion: "t3-thread.thread.v1",
     toolVersion: "0.1.0",
     thread: {
       id: "sanitized-thread-0001",
@@ -127,7 +127,7 @@ test("first JSONL record is the thread header and carries provider and warnings"
   const records = jsonlRecordsForThread(thread);
 
   assert.equal(records[0].recordType, "thread");
-  assert.equal(records[0].schemaVersion, "t3-session.jsonl-record.v1");
+  assert.equal(records[0].schemaVersion, "t3-thread.jsonl-record.v1");
   assert.equal(records[0].threadId, thread.thread.id);
   assert.deepEqual(records[0].data, thread.thread);
   assert.deepEqual(records[0].provider, thread.provider);
@@ -332,7 +332,7 @@ test("normalizeThreadList builds the envelope with metadata-only summaries", () 
     hasMore: false,
   });
 
-  assert.equal(forward.schemaVersion, "t3-session.list.v1");
+  assert.equal(forward.schemaVersion, "t3-thread.list.v1");
   assert.equal(forward.count, 2);
   assert.equal(forward.hasMore, false);
   assert.equal(forward.ordering.sortBy, "updatedAt");

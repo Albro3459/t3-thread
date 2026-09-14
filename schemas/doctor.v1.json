@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://t3-session.dev/schemas/doctor.v1.json",
-  "title": "t3-session installation diagnostics",
+  "$id": "https://t3-thread.dev/schemas/doctor.v1.json",
+  "title": "t3-thread installation diagnostics",
   "description": "Diagnostic report describing whether the local T3 installation is readable and structurally valid. Emitted by the doctor command. Fields describing the database, schema, and counts are populated only when the database could be opened; an unreadable or missing database still emits a complete envelope with those fields null or empty.",
   "type": "object",
   "required": [
@@ -30,7 +30,7 @@
     "databaseError"
   ],
   "properties": {
-    "schemaVersion": { "const": "t3-session.doctor.v1" },
+    "schemaVersion": { "const": "t3-thread.doctor.v1" },
     "toolVersion": { "type": "string" },
     "packageVersion": { "type": "string" },
     "runtimeVersion": { "type": "string" },

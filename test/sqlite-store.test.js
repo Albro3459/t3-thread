@@ -6,7 +6,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
-  createT3SessionClient,
+  createT3ThreadClient,
   DatabaseUnavailableError,
   EXIT_CODES,
   InvalidArgumentsError,
@@ -81,10 +81,10 @@ test("retrieves and normalizes a complete thread from SQLite", async () => {
   const fixture = createFixtureDatabase();
   try {
     const before = fs.statSync(fixture.databasePath);
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(ACTIVE_THREAD_ID);
 
-    assert.equal(thread.schemaVersion, "t3-session.thread.v1");
+    assert.equal(thread.schemaVersion, "t3-thread.thread.v1");
     assert.equal(thread.toolVersion, VERSION);
     assert.deepEqual(thread.thread.project, {
       title: "Sanitized project",
@@ -113,7 +113,7 @@ test("retrieves and normalizes a complete thread from SQLite", async () => {
 test("preserves null project and provider metadata", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(ORPHAN_THREAD_ID);
 
     assert.equal(thread.thread.projectId, "missing-project");
@@ -142,7 +142,7 @@ test("preserves null project and provider metadata", async () => {
 test("uses the project join marker when project fields are null", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(NULL_FIELD_PROJECT_THREAD_ID);
 
     assert.deepEqual(thread.thread.project, {
@@ -157,7 +157,7 @@ test("uses the project join marker when project fields are null", async () => {
 test("treats deleted and missing threads as not found", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     await assert.rejects(
       client.getThread(DELETED_THREAD_ID),
       (error) => error instanceof ThreadNotFoundError && error.code === "THREAD_NOT_FOUND",
@@ -179,7 +179,7 @@ test("distinguishes an unavailable schema from a missing thread", async () => {
   database.close();
 
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     await assert.rejects(
       client.getThread(ACTIVE_THREAD_ID),
       (error) => error instanceof SchemaUnavailableError
@@ -193,7 +193,7 @@ test("distinguishes an unavailable schema from a missing thread", async () => {
 });
 
 test("reports an unavailable database separately", async () => {
-  const client = await createT3SessionClient({ db: "/tmp/t3-session-does-not-exist/state.sqlite" });
+  const client = await createT3ThreadClient({ db: "/tmp/t3-thread-does-not-exist/state.sqlite" });
   await assert.rejects(
     client.getThread(ACTIVE_THREAD_ID),
     (error) => error instanceof DatabaseUnavailableError && error.code === "DATABASE_UNAVAILABLE",
@@ -251,7 +251,7 @@ test("finds active titles with normalized results and literal wildcard matching"
     );
     database.close();
 
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const percentMatches = await client.findThreads({ title: "  100%  " });
     assert.deepEqual(percentMatches.threads.map((match) => match.id), ["percent-thread-0001"]);
     assert.deepEqual(percentMatches.threads[0].project, {
@@ -279,10 +279,10 @@ test("returns a read-only doctor report with schema and counts", async () => {
   const home = path.join(fixture.directory, "home");
   fs.mkdirSync(path.join(home, "userdata", "logs", "provider"), { recursive: true });
   try {
-    const client = await createT3SessionClient({ home, db: fixture.databasePath });
+    const client = await createT3ThreadClient({ home, db: fixture.databasePath });
     const report = await client.doctor();
 
-    assert.equal(report.schemaVersion, "t3-session.doctor.v1");
+    assert.equal(report.schemaVersion, "t3-thread.doctor.v1");
     assert.equal(report.resolvedHome, home);
     assert.equal(report.databasePath, fixture.databasePath);
     assert.equal(report.databaseReadable, true);
@@ -307,7 +307,7 @@ test("a healthy doctor report validates against schemas/doctor.v1.json", async (
   const home = path.join(fixture.directory, "home");
   fs.mkdirSync(path.join(home, "userdata", "logs", "provider"), { recursive: true });
   try {
-    const client = await createT3SessionClient({ home, db: fixture.databasePath });
+    const client = await createT3ThreadClient({ home, db: fixture.databasePath });
     const report = await client.doctor();
 
     assert.equal(report.healthy, true);
@@ -319,7 +319,7 @@ test("a healthy doctor report validates against schemas/doctor.v1.json", async (
 
 test("an unhealthy doctor report for a missing database validates against schemas/doctor.v1.json", async () => {
   const doctorSchema = loadSchema("doctor.v1.json");
-  const client = await createT3SessionClient({ db: "/tmp/t3-session-doctor-missing/state.sqlite" });
+  const client = await createT3ThreadClient({ db: "/tmp/t3-thread-doctor-missing/state.sqlite" });
   const report = await client.doctor();
 
   assert.equal(report.healthy, false);
@@ -329,7 +329,7 @@ test("an unhealthy doctor report for a missing database validates against schema
 });
 
 test("validates and trims public title-search input before opening SQLite", async () => {
-  const client = await createT3SessionClient({ db: "/tmp/t3-session-search-input.sqlite" });
+  const client = await createT3ThreadClient({ db: "/tmp/t3-thread-search-input.sqlite" });
 
   await assert.rejects(
     client.findThreads({ title: "   " }),
@@ -348,7 +348,7 @@ test("reports missing required columns in doctor diagnostics", async () => {
   database.close();
 
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const report = await client.doctor();
 
     assert.equal(report.databaseReadable, true);
@@ -549,7 +549,7 @@ test("limit/offset paginate and hasMore reflects remaining rows", async () => {
 });
 
 test("invalid list arguments reject before the database is opened", async () => {
-  const missingDatabasePath = "/tmp/t3-session-does-not-exist/state.sqlite";
+  const missingDatabasePath = "/tmp/t3-thread-does-not-exist/state.sqlite";
 
   assert.throws(
     () => listThreadRowsFromDatabase(missingDatabasePath, { since: "not-a-date" }),
@@ -570,7 +570,7 @@ test("invalid list arguments reject before the database is opened", async () => 
 });
 
 test("listThreads raises DatabaseUnavailableError and SchemaUnavailableError", async () => {
-  const client = await createT3SessionClient({ db: "/tmp/t3-session-list-missing/state.sqlite" });
+  const client = await createT3ThreadClient({ db: "/tmp/t3-thread-list-missing/state.sqlite" });
   await assert.rejects(
     client.listThreads(),
     (error) => error instanceof DatabaseUnavailableError && error.code === "DATABASE_UNAVAILABLE",
@@ -582,7 +582,7 @@ test("listThreads raises DatabaseUnavailableError and SchemaUnavailableError", a
   database.close();
 
   try {
-    const schemaClient = await createT3SessionClient({ db: fixture.databasePath });
+    const schemaClient = await createT3ThreadClient({ db: fixture.databasePath });
     await assert.rejects(
       schemaClient.listThreads(),
       (error) => error instanceof SchemaUnavailableError && error.code === "SCHEMA_UNAVAILABLE",
@@ -595,7 +595,7 @@ test("listThreads raises DatabaseUnavailableError and SchemaUnavailableError", a
 test("getThread without a turn selection has no selection property", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(ACTIVE_THREAD_ID);
     assert.equal(Object.hasOwn(thread, "selection"), false);
     assert.deepEqual(thread.turns.map((turn) => turn.turnId), ["turn-2", "turn-1"]);
@@ -607,7 +607,7 @@ test("getThread without a turn selection has no selection property", async () =>
 test("{ lastTurn: true } selects only the newest turn and its associated rows", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(WINDOW_THREAD_ID, { lastTurn: true });
 
     assert.deepEqual(thread.turns.map((turn) => turn.turnId), ["wturn-3"]);
@@ -633,7 +633,7 @@ test("{ lastTurn: true } selects only the newest turn and its associated rows", 
 test("{ turnId: \"wturn-1\" } selects exactly that turn and its messages", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(WINDOW_THREAD_ID, { turnId: "wturn-1" });
 
     assert.deepEqual(thread.turns.map((turn) => turn.turnId), ["wturn-1"]);
@@ -655,7 +655,7 @@ test("{ turnId: \"wturn-1\" } selects exactly that turn and its messages", async
 test("{ turnLimit: 2 } selects the two newest turns but emits them chronologically", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(WINDOW_THREAD_ID, { turnLimit: 2 });
 
     assert.deepEqual(thread.turns.map((turn) => turn.turnId), ["wturn-2", "wturn-3"]);
@@ -681,7 +681,7 @@ test("{ turnLimit: 2 } selects the two newest turns but emits them chronological
 test("{ turnLimit: 1, turnOffset: 1 } selects the second-newest turn", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(WINDOW_THREAD_ID, { turnLimit: 1, turnOffset: 1 });
 
     assert.deepEqual(thread.turns.map((turn) => turn.turnId), ["wturn-2"]);
@@ -701,7 +701,7 @@ test("{ turnLimit: 1, turnOffset: 1 } selects the second-newest turn", async () 
 test("an empty but valid window returns normalized thread metadata with empty turns/messages/activities", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const emptyWindow = await client.getThread(WINDOW_THREAD_ID, { turnLimit: 1, turnOffset: 99 });
 
     assert.equal(emptyWindow.thread.id, WINDOW_THREAD_ID);
@@ -724,7 +724,7 @@ test("an empty but valid window returns normalized thread metadata with empty tu
 test("bounded retrieval still treats deleted or missing threads as not found", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     await assert.rejects(
       client.getThread(DELETED_PROJECT_TWO_THREAD_ID, { lastTurn: true }),
       (error) => error instanceof ThreadNotFoundError,
@@ -810,7 +810,7 @@ test("readParticipantActivitiesFromDatabase runs the read-only deferred-transact
 test("findThreads is oldest-first by default and reverse: true flips it", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const forward = await client.findThreads({ title: "sanitized" });
     assert.equal(forward.ordering.direction, "asc");
     assert.deepEqual(forward.threads.map((match) => match.id), [
@@ -858,7 +858,7 @@ test("a findThreads envelope validates against schemas/find.v1.json", async () =
   const findSchema = loadSchema("find.v1.json");
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const result = await client.findThreads({ title: "sanitized" });
     assert.ok(result.threads.length > 0);
     assertValidEnvelope(result, findSchema);
@@ -874,7 +874,7 @@ test("a findThreads envelope validates against schemas/find.v1.json", async () =
 test("find and list share the exact same per-thread field set", async () => {
   const fixture = createFixtureDatabase();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const found = await client.findThreads({ title: "sanitized" });
     const listed = await client.listThreads({});
 

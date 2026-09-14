@@ -30,7 +30,7 @@ import {
 } from "./fixtures/sqlite-fixture.js";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const executable = path.join(projectRoot, "scripts", "t3-session.js");
+const executable = path.join(projectRoot, "scripts", "t3-thread.js");
 
 function cleanupFixture(fixture) {
   fs.rmSync(fixture.directory, { recursive: true, force: true });
@@ -249,7 +249,7 @@ test("emits complete thread.v1 JSON without diagnostics on stdout", () => {
     assert.equal(result.status, 0);
     assert.equal(result.stderr, "");
     const thread = JSON.parse(result.stdout);
-    assert.equal(thread.schemaVersion, "t3-session.thread.v1");
+    assert.equal(thread.schemaVersion, "t3-thread.thread.v1");
     assert.equal(thread.thread.id, ACTIVE_THREAD_ID);
     assert.equal(thread.turns.length, 2);
     assert.equal(thread.messages.length, 2);
@@ -285,7 +285,7 @@ test("emits stable one-record-per-line normalized JSONL", () => {
       "message",
       "activity",
     ]);
-    assert.ok(records.every((record) => record.schemaVersion === "t3-session.jsonl-record.v1"));
+    assert.ok(records.every((record) => record.schemaVersion === "t3-thread.jsonl-record.v1"));
     assert.ok(records.every((record) => record.threadId === ACTIVE_THREAD_ID));
     assert.equal(records[0].data.title, "Sanitized recovery thread");
     assert.equal(records[0].provider.providerName, "SanitizedProvider");
@@ -322,7 +322,7 @@ test("reports missing threads as a machine-readable error with exit code 2", () 
 
     assert.equal(result.status, 2);
     assert.deepEqual(parseError(result), {
-      schemaVersion: "t3-session.error.v1",
+      schemaVersion: "t3-thread.error.v1",
       code: "THREAD_NOT_FOUND",
       message: "No thread matched the supplied ID.",
       details: { threadId: "missing-thread-0001" },
@@ -494,7 +494,7 @@ test("finds titles through the CLI with JSON output and no diagnostics", () => {
     assert.equal(result.status, 0);
     assert.equal(result.stderr, "");
     const found = JSON.parse(result.stdout);
-    assert.equal(found.schemaVersion, "t3-session.find.v1");
+    assert.equal(found.schemaVersion, "t3-thread.find.v1");
     assert.equal(found.filters.title, "SANITIZED RECOVERY");
     assert.equal(found.count, 1);
     assert.deepEqual(found.threads.map((match) => match.id), [ACTIVE_THREAD_ID]);
@@ -523,7 +523,7 @@ test("doctor emits machine-readable diagnostics on stdout and uses health exit c
     assert.equal(healthyResult.status, 0);
     assert.equal(healthyResult.stderr, "");
     const report = JSON.parse(healthyResult.stdout);
-    assert.equal(report.schemaVersion, "t3-session.doctor.v1");
+    assert.equal(report.schemaVersion, "t3-thread.doctor.v1");
     assert.equal(report.databaseReadable, true);
     assert.equal(report.schemaValid, true);
     assert.deepEqual(report.counts, { threads: 9, messages: 8, activities: 6 });
@@ -556,7 +556,7 @@ test("doctor human output keeps diagnostics readable and off stderr", () => {
 
     assert.equal(result.status, 0);
     assert.equal(result.stderr, "");
-    assert.match(result.stdout, /T3 Session Doctor/);
+    assert.match(result.stdout, /T3 Thread Doctor/);
     assert.match(result.stdout, /Database readable: yes/);
     assert.match(result.stdout, /Required columns/);
   } finally {
@@ -660,7 +660,7 @@ test("tail parses its options before and after the command", () => {
   });
 });
 
-test("list --format json emits a t3-session.list.v1 envelope with metadata-only summaries", () => {
+test("list --format json emits a t3-thread.list.v1 envelope with metadata-only summaries", () => {
   const fixture = createFixtureDatabase();
   try {
     const result = runCli(fixture, ["list", "--format", "json", "--db", fixture.databasePath]);
@@ -668,7 +668,7 @@ test("list --format json emits a t3-session.list.v1 envelope with metadata-only 
     assert.equal(result.status, 0);
     assert.equal(result.stderr, "");
     const list = JSON.parse(result.stdout);
-    assert.equal(list.schemaVersion, "t3-session.list.v1");
+    assert.equal(list.schemaVersion, "t3-thread.list.v1");
     assert.equal(list.ordering.sortBy, "updatedAt");
     assert.equal(list.ordering.direction, "asc");
     assert.equal(list.count, 7);
@@ -1185,7 +1185,7 @@ test("tail --once --format json emits a single JSON array of baseline records an
     assert.equal(result.stderr, "");
     const records = JSON.parse(result.stdout);
     assert.ok(Array.isArray(records));
-    assert.ok(records.every((record) => record.schemaVersion === "t3-session.tail-record.v1"));
+    assert.ok(records.every((record) => record.schemaVersion === "t3-thread.tail-record.v1"));
     assert.equal(records.filter((record) => record.recordType === "thread").length, 1);
     assert.equal(records.filter((record) => record.recordType === "turn").length, 2);
     assert.equal(records.filter((record) => record.recordType === "message").length, 2);
@@ -1210,7 +1210,7 @@ test("tail --once --format jsonl streams tail-record.v1 lines ending with the en
     assert.equal(result.stderr, "");
     const lines = result.stdout.trimEnd().split("\n");
     const records = lines.map((line) => JSON.parse(line));
-    assert.ok(records.every((record) => record.schemaVersion === "t3-session.tail-record.v1"));
+    assert.ok(records.every((record) => record.schemaVersion === "t3-thread.tail-record.v1"));
     assert.equal(records.at(-1).op, "end");
     assert.equal(records.at(-1).data.reason, "once");
   } finally {
@@ -1571,7 +1571,7 @@ test("three consecutive transient database failures retry with diagnostics and t
     const diagnostics = lines.map((line) => JSON.parse(line));
     assert.equal(diagnostics.length, 4);
     for (const diagnostic of diagnostics) {
-      assert.equal(diagnostic.schemaVersion, "t3-session.error.v1");
+      assert.equal(diagnostic.schemaVersion, "t3-thread.error.v1");
       assert.equal(diagnostic.code, "DATABASE_UNAVAILABLE");
     }
   } finally {
@@ -1679,7 +1679,7 @@ test("participants --format json emits a valid participants.v1 envelope", () => 
     assert.equal(result.status, 0);
     assert.equal(result.stderr, "");
     const view = JSON.parse(result.stdout);
-    assert.equal(view.schemaVersion, "t3-session.participants.v1");
+    assert.equal(view.schemaVersion, "t3-thread.participants.v1");
     assert.equal(view.participants.length, 3);
     assert.equal(view.hierarchyAvailable, false);
     assertValidParticipantsEnvelope(view);

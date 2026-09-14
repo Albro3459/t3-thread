@@ -1,1 +1,1 @@
-This package includes the t3-session recovery skill bundle for users and Claude/Codex agents using a T3 Code thread Title or ID.
+This package includes the t3-thread recovery skill bundle for users and Claude/Codex agents using a T3 Code thread Title or ID.

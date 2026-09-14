@@ -1,6 +1,6 @@
 import { chronologicalThreadEntries } from "./record-order.js";
 
-const JSONL_SCHEMA_VERSION = "t3-session.jsonl-record.v1";
+const JSONL_SCHEMA_VERSION = "t3-thread.jsonl-record.v1";
 
 function displayValue(value) {
   if (value === null || value === undefined || value === "") {

@@ -25,7 +25,7 @@ import { VERSION } from "./version.js";
 
 export { VERSION };
 
-export async function createT3SessionClient(options = {}) {
+export async function createT3ThreadClient(options = {}) {
   const config = resolveConfig(options);
   const clientNow = typeof options.now === "function" ? options.now : Date.now;
 
@@ -55,7 +55,7 @@ export async function createT3SessionClient(options = {}) {
         observedAt,
       });
     },
-    // Returns an async iterable of t3-session.tail-record.v1 objects. Not async itself, so
+    // Returns an async iterable of t3-thread.tail-record.v1 objects. Not async itself, so
     // option validation throws before any iteration and before SQLite is opened.
     tailThread(threadId, requestOptions = {}) {
       validateThreadId(threadId);
@@ -133,7 +133,7 @@ export {
   ProviderLogUnavailableError,
   RawJsonlPartiallyUnreadableError,
   SchemaUnavailableError,
-  T3SessionError,
+  T3ThreadError,
   ThreadNotFoundError,
   UnknownCommandError,
   serializeError,

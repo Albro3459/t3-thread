@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://t3-session.dev/schemas/tail-record.v1.json",
-  "title": "t3-session tail record",
+  "$id": "https://t3-thread.dev/schemas/tail-record.v1.json",
+  "title": "t3-thread tail record",
   "description": "One record emitted by a tail poll cycle. Data records within a cycle are emitted in the same chronological order as normalized JSONL. An upsert means replace-by-identifier: a record seen for the first time and a record whose content changed both arrive as upsert. Deletions are not reported.",
   "type": "object",
   "required": ["schemaVersion", "op", "recordType", "threadId", "observedAt", "cycle", "data"],
   "properties": {
-    "schemaVersion": { "const": "t3-session.tail-record.v1" },
+    "schemaVersion": { "const": "t3-thread.tail-record.v1" },
     "op": {
       "type": "string",
       "enum": ["upsert", "live-state", "end"]

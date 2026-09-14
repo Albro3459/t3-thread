@@ -1,4 +1,4 @@
 interface:
-  display_name: "T3 Session Skill"
+  display_name: "T3 Thread Skill"
   short_description: "Recover local T3 Code threads by ID using read-only normalized and provider data"
   default_prompt: "Recover a T3 Code conversation thread by exact ID, prefer normalized JSON for agent processing, and report missing or partial history honestly."

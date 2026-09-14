@@ -9,7 +9,7 @@ import {
   openReadonlyDatabase,
 } from "./sqlite-store.js";
 
-export const DOCTOR_SCHEMA_VERSION = "t3-session.doctor.v1";
+export const DOCTOR_SCHEMA_VERSION = "t3-thread.doctor.v1";
 
 function inspectPath(targetPath, type) {
   let exists = false;
@@ -106,7 +106,7 @@ export function inspectInstallation({ config, toolVersion }) {
 export function formatDoctorHuman(report) {
   const yesNo = (value) => value ? "yes" : "no";
   const lines = [
-    "T3 Session Doctor",
+    "T3 Thread Doctor",
     "=================",
     "",
     `Status: ${report.status}`,

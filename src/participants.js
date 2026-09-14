@@ -1,7 +1,7 @@
 import { parseJsonField } from "./normalize.js";
 import { VERSION } from "./version.js";
 
-export const PARTICIPANTS_SCHEMA_VERSION = "t3-session.participants.v1";
+export const PARTICIPANTS_SCHEMA_VERSION = "t3-thread.participants.v1";
 
 export const TASK_ACTIVITY_KINDS = Object.freeze([
   "task.started",

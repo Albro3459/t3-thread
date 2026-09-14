@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
-import { createT3SessionClient, openReadonlyDatabase } from "../src/index.js";
+import { createT3ThreadClient, openReadonlyDatabase } from "../src/index.js";
 import { ACTIVE_THREAD_ID, createFixtureDatabase } from "./fixtures/sqlite-fixture.js";
 import { enableWalMode } from "./fixtures/live-fixture.js";
 
@@ -72,7 +72,7 @@ test("opens a database read-only while a writer has a WAL", async () => {
       readonlyDatabase.close();
     }
 
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const thread = await client.getThread(ACTIVE_THREAD_ID);
     assert.equal(thread.messages.at(-1).messageId, "message-wal");
   } finally {
@@ -87,7 +87,7 @@ test("a tail observes rows another process commits in WAL mode on a later cycle"
   const writer = new DatabaseSync(fixture.databasePath);
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 2,
       // A separate connection commits between cycles; each cycle opens a fresh read-only
@@ -132,7 +132,7 @@ test("a full tail run does not modify the database", async () => {
     const before = fs.statSync(fixture.databasePath);
 
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     const records = await collect(client.tailThread(ACTIVE_THREAD_ID, {
       maxCycles: 3,
       sleep: async (ms) => clock.advance(ms),
@@ -151,7 +151,7 @@ test("a read-only connection still refuses writes while a tail is polling", asyn
   const fixture = createFixtureDatabase();
   try {
     const clock = createClock();
-    const client = await createT3SessionClient({ db: fixture.databasePath, now: clock.now });
+    const client = await createT3ThreadClient({ db: fixture.databasePath, now: clock.now });
     let checked = false;
 
     await collect(client.tailThread(ACTIVE_THREAD_ID, {

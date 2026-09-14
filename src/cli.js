@@ -6,10 +6,10 @@ import {
   RawJsonlPartiallyUnreadableError,
   UnknownCommandError,
   serializeError,
-  toT3SessionError,
+  toT3ThreadError,
 } from "./errors.js";
 import { doctorExitCode, formatDoctorHuman } from "./doctor.js";
-import { createT3SessionClient } from "./index.js";
+import { createT3ThreadClient } from "./index.js";
 import { normalizeTailOptions } from "./query-options.js";
 import { installBundledSkill } from "./skill-install.js";
 import { formatBundledSchema } from "./schema.js";
@@ -291,14 +291,14 @@ export function parseCliArgs(argv = []) {
 
 export function formatHelp() {
   return [
-    `t3-session ${VERSION}`,
+    `t3-thread ${VERSION}`,
     "",
     "Read-only access to local T3 Code conversation threads.",
     "",
     "Usage:",
-    "  t3-session [options] <command> [args]",
-    "  t3-session --help",
-    "  t3-session --version",
+    "  t3-thread [options] <command> [args]",
+    "  t3-thread --help",
+    "  t3-thread --version",
     "",
     "Options:",
     "  --home <path>           Use a T3 home directory",
@@ -394,7 +394,7 @@ async function handleList(options) {
   }
 
   const config = options.config || resolveConfig(options);
-  const client = await createT3SessionClient({ home: config.home, db: config.stateDb });
+  const client = await createT3ThreadClient({ home: config.home, db: config.stateDb });
   const list = await client.listThreads({
     project: options.project,
     since: options.since,
@@ -469,7 +469,7 @@ async function handleGet(options) {
   }
 
   const config = options.config || resolveConfig(options);
-  const client = await createT3SessionClient({ home: config.home, db: config.stateDb });
+  const client = await createT3ThreadClient({ home: config.home, db: config.stateDb });
   if (options.rawJsonl) {
     const raw = await client.readRawJsonl(args[0]);
     const diagnostics = raw.warnings.length === 0
@@ -553,7 +553,7 @@ async function handleParticipants(options) {
   }
 
   const config = options.config || resolveConfig(options);
-  const client = await createT3SessionClient({ home: config.home, db: config.stateDb });
+  const client = await createT3ThreadClient({ home: config.home, db: config.stateDb });
   const view = await client.listParticipants(args[0], {
     turnId: options.turn,
     turnLimit: options.turnLimit,
@@ -578,7 +578,7 @@ async function handleParticipants(options) {
   return { output: formatParticipantsHuman(view), exitCode };
 }
 
-// tail streams t3-session.tail-record.v1 records straight to the provided stream rather
+// tail streams t3-thread.tail-record.v1 records straight to the provided stream rather
 // than returning an `output` string, because the run can be unbounded and can end by
 // throwing (thread-not-found, database-unavailable). Writing as records arrive, instead of
 // buffering everything into a return value, is what makes SIGINT and broken-pipe handling
@@ -646,7 +646,7 @@ async function handleTail(options) {
   const canListenStdout = typeof stdout.on === "function";
 
   const config = options.config || resolveConfig(options);
-  const client = await createT3SessionClient({ home: config.home, db: config.stateDb });
+  const client = await createT3ThreadClient({ home: config.home, db: config.stateDb });
 
   const controller = new AbortController();
   let brokenPipe = false;
@@ -746,7 +746,7 @@ async function handleFind(options) {
   }
 
   const config = options.config || resolveConfig(options);
-  const client = await createT3SessionClient({ home: config.home, db: config.stateDb });
+  const client = await createT3ThreadClient({ home: config.home, db: config.stateDb });
   const matches = await client.findThreads({ title: options.title, reverse: options.reverse });
 
   return {
@@ -791,7 +791,7 @@ async function handleDoctor(options) {
   }
 
   const config = options.config || resolveConfig(options);
-  const client = await createT3SessionClient({ home: config.home, db: config.stateDb });
+  const client = await createT3ThreadClient({ home: config.home, db: config.stateDb });
   const report = await client.doctor();
   return {
     output: format === "json" ? formatDoctorJson(report) : formatDoctorHuman(report),
@@ -930,7 +930,7 @@ export async function main(argv = process.argv.slice(2), io = {}) {
     }
     return result?.exitCode ?? 0;
   } catch (error) {
-    const normalized = toT3SessionError(error);
+    const normalized = toT3ThreadError(error);
     writeLine(stderr, JSON.stringify(serializeError(normalized)));
     return normalized.exitCode;
   }

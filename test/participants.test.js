@@ -7,7 +7,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { createT3SessionClient, EXIT_CODES, ThreadNotFoundError } from "../src/index.js";
+import { createT3ThreadClient, EXIT_CODES, ThreadNotFoundError } from "../src/index.js";
 import {
   isTerminalTaskStatus,
   normalizeParticipants,
@@ -62,7 +62,7 @@ const FOLD_TURN_A = "cafturn-a";
 const FOLD_TURN_B = "cafturn-b";
 
 function createTurnScopedFixture() {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-session-turn-scoped-"));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-thread-turn-scoped-"));
   const databasePath = path.join(directory, "state.sqlite");
   const database = new DatabaseSync(databasePath);
 
@@ -110,7 +110,7 @@ function createTurnScopedFixture() {
 }
 
 function createFoldAcrossActivitiesFixture() {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-session-fold-across-"));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-thread-fold-across-"));
   const databasePath = path.join(directory, "state.sqlite");
   const database = new DatabaseSync(databasePath);
 
@@ -200,7 +200,7 @@ function assertValidEnvelope(envelope) {
 test("the envelope validator rejects the schema violations it exists to catch", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const valid = await client.listParticipants(FLAT_THREAD_ID);
     assertValidEnvelope(valid);
 
@@ -218,7 +218,7 @@ test("the envelope validator rejects the schema violations it exists to catch", 
         envelope.warnings.push({ code: "PARENT_CYCLE" });
       },
       "wrong schemaVersion": (envelope) => {
-        envelope.schemaVersion = "t3-session.participants.v2";
+        envelope.schemaVersion = "t3-thread.participants.v2";
       },
       "ordering.direction outside the enum": (envelope) => {
         envelope.ordering.direction = "sideways";
@@ -283,7 +283,7 @@ test("TERMINAL_TASK_STATUSES and TASK_ACTIVITY_KINDS match the plan's frozen con
 test("multiple task.* activities sharing a taskId fold into exactly one participant", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID);
 
     assert.equal(view.participants.length, 3);
@@ -299,7 +299,7 @@ test("multiple task.* activities sharing a taskId fold into exactly one particip
 test("last non-null wins without erasing fields a later activity omits", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID);
     const alpha = byTaskId(view, "task-alpha");
 
@@ -321,7 +321,7 @@ test("last non-null wins without erasing fields a later activity omits", async (
 test("firstSeenAt, lastSeenAt, activityCount, turnId, and turnIds are computed for task-alpha", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID);
     const alpha = byTaskId(view, "task-alpha");
 
@@ -341,7 +341,7 @@ test("firstSeenAt, lastSeenAt, activityCount, turnId, and turnIds are computed f
 test("turnId keeps the first non-null turn_id across activities, not null and not the last", async () => {
   const fixture = createFoldAcrossActivitiesFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FOLD_THREAD_ID);
     const task = byTaskId(view, "fold-turn-null-then-two-real");
 
@@ -358,7 +358,7 @@ test("turnId keeps the first non-null turn_id across activities, not null and no
 test("state mapping: terminal status finishes, missing status is unknown, unrecognised status keeps running", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID);
 
     const alpha = byTaskId(view, "task-alpha");
@@ -380,7 +380,7 @@ test("state mapping: terminal status finishes, missing status is unknown, unreco
 test("usage prefers typedUsage over snake_case usage, and unknown values are null rather than zero", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID);
 
     const alpha = byTaskId(view, "task-alpha");
@@ -396,7 +396,7 @@ test("usage prefers typedUsage over snake_case usage, and unknown values are nul
 test("unmodelled projected keys land in adapterSpecific and never at the top level", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID);
     const alpha = byTaskId(view, "task-alpha");
 
@@ -412,7 +412,7 @@ test("unmodelled projected keys land in adapterSpecific and never at the top lev
 test("non-task activities are ignored and a tool argument taskId does not add an activity", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID);
 
     assert.equal(view.participants.length, 3);
@@ -428,7 +428,7 @@ test("non-task activities are ignored and a tool argument taskId does not add an
 test("a thread with no task activities returns a valid empty envelope, not an error", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(EMPTY_THREAD_ID);
 
     assert.deepEqual(view.participants, []);
@@ -443,7 +443,7 @@ test("a thread with no task activities returns a valid empty envelope, not an er
 test("a soft-deleted thread and a nonexistent thread both raise ThreadNotFoundError with exitCode 2", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
 
     await assert.rejects(
       () => client.listParticipants(DELETED_THREAD_ID),
@@ -470,7 +470,7 @@ test("a soft-deleted thread and a nonexistent thread both raise ThreadNotFoundEr
 test("a malformed payload warns without throwing or dropping the thread's other participants, and a taskId-less payload is skipped", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(BROKEN_THREAD_ID);
 
     assert.deepEqual(
@@ -488,7 +488,7 @@ test("a malformed payload warns without throwing or dropping the thread's other 
 test("ordering is oldest-first by firstSeenAt with a taskId tie-breaker, and --reverse flips it", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const ascending = await client.listParticipants(BROKEN_THREAD_ID);
 
     assert.deepEqual(
@@ -509,7 +509,7 @@ test("ordering is oldest-first by firstSeenAt with a taskId tie-breaker, and --r
 test("a null firstSeenAt sorts last in both ascending and reversed order", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const ascending = await client.listParticipants(TREE_THREAD_ID);
     const descending = await client.listParticipants(TREE_THREAD_ID, { reverse: true });
 
@@ -525,7 +525,7 @@ test("a null firstSeenAt sorts last in both ascending and reversed order", async
 test("limit and offset page the result while counts.total reports the full match count", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const page = await client.listParticipants(BROKEN_THREAD_ID, { limit: 2, offset: 1 });
 
     assert.equal(page.counts.total, 5);
@@ -542,7 +542,7 @@ test("limit and offset page the result while counts.total reports the full match
 test("a resolvable parentAgentId produces parentTaskId, depth, and path three levels deep", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TREE_THREAD_ID);
 
     const root = byTaskId(view, "root-task");
@@ -572,7 +572,7 @@ test("a resolvable parentAgentId produces parentTaskId, depth, and path three le
 test("hierarchyAvailable is true only when at least one edge resolves", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
 
     const tree = await client.listParticipants(TREE_THREAD_ID);
     assert.equal(tree.hierarchyAvailable, true);
@@ -587,7 +587,7 @@ test("hierarchyAvailable is true only when at least one edge resolves", async ()
 test("an unresolved parentAgentId leaves parentTaskId and path null and emits UNRESOLVED_PARENT", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(BROKEN_THREAD_ID);
     const orphan = byTaskId(view, "orphan-task");
 
@@ -607,7 +607,7 @@ test("an unresolved parentAgentId leaves parentTaskId and path null and emits UN
 test("a parent cycle terminates, reports both members as roots, and emits one PARENT_CYCLE warning", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(BROKEN_THREAD_ID);
 
     const cycleA = byTaskId(view, "cycle-a");
@@ -628,7 +628,7 @@ test("a parent cycle terminates, reports both members as roots, and emits one PA
 test("parentage is never inferred from adjacency: two roots with no parentAgentId stay roots", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID);
 
     // task-alpha and task-beta are adjacent in created_at and sequence, share turn pturn-1,
@@ -652,7 +652,7 @@ test("parentage is never inferred from adjacency: two roots with no parentAgentI
 test("sibling numbering is deterministic across repeated calls", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const first = await client.listParticipants(TREE_THREAD_ID);
     const second = await client.listParticipants(TREE_THREAD_ID);
 
@@ -668,7 +668,7 @@ test("sibling numbering is deterministic across repeated calls", async () => {
 test("--tree nests resolved children while keeping every participant field", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TREE_THREAD_ID, { tree: true });
 
     assert.equal(view.participants.length, 2);
@@ -695,7 +695,7 @@ test("--tree nests resolved children while keeping every participant field", asy
 test("--tree on a thread with no explicit parentage returns every participant as a root with empty children", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID, { tree: true });
 
     assert.equal(view.participants.length, 3);
@@ -710,7 +710,7 @@ test("--tree on a thread with no explicit parentage returns every participant as
 test("a flat listParticipants envelope validates against schemas/participants.v1.json", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TREE_THREAD_ID);
     assertValidEnvelope(view);
   } finally {
@@ -721,7 +721,7 @@ test("a flat listParticipants envelope validates against schemas/participants.v1
 test("a --tree listParticipants envelope validates against schemas/participants.v1.json", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TREE_THREAD_ID, { tree: true });
     assertValidEnvelope(view);
   } finally {
@@ -732,7 +732,7 @@ test("a --tree listParticipants envelope validates against schemas/participants.
 test("a cycle demotes only its own members: a downstream non-member keeps its explicit parent", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(CYCLE_SCOPE_THREAD_ID);
 
     const a = byTaskId(view, "A");
@@ -768,7 +768,7 @@ test("a cycle demotes only its own members: a downstream non-member keeps its ex
 test("a self-parent is a one-node PARENT_CYCLE, not an UNRESOLVED_PARENT", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(SELF_PARENT_THREAD_ID);
     const self = byTaskId(view, "self-parent-task");
 
@@ -788,7 +788,7 @@ test("a self-parent is a one-node PARENT_CYCLE, not an UNRESOLVED_PARENT", async
 test("usage is folded per field across activities, not replaced wholesale, for typedUsage and snake_case usage alike", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(USAGE_FOLD_THREAD_ID);
 
     const typed = byTaskId(view, "usage-fold-typed");
@@ -804,7 +804,7 @@ test("usage is folded per field across activities, not replaced wholesale, for t
 test("typedUsage wins per field over usage even when usage was reported by a later activity", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(USAGE_FOLD_THREAD_ID);
     const mixed = byTaskId(view, "usage-fold-mixed");
 
@@ -819,7 +819,7 @@ test("typedUsage wins per field over usage even when usage was reported by a lat
 test("a wrong-typed scalar is routed to adapterSpecific instead of breaking the declared top-level type", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TYPE_COERCION_THREAD_ID);
     const wrongTyped = byTaskId(view, "wrong-typed-task");
 
@@ -837,7 +837,7 @@ test("a wrong-typed scalar is routed to adapterSpecific instead of breaking the 
 test("a legitimate isBackgrounded: false is preserved as a real boolean, not swallowed as absent", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TYPE_COERCION_THREAD_ID);
     const boolFalse = byTaskId(view, "bool-false-task");
 
@@ -852,7 +852,7 @@ test("a legitimate isBackgrounded: false is preserved as a real boolean, not swa
 test("isBackgrounded true then a later false folds to false across activities, the later non-null value is not swallowed", async () => {
   const fixture = createFoldAcrossActivitiesFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FOLD_THREAD_ID);
     const task = byTaskId(view, "fold-bool-true-then-false");
 
@@ -866,7 +866,7 @@ test("isBackgrounded true then a later false folds to false across activities, t
 test("isBackgrounded false survives a later activity that omits the field, rather than reverting to null", async () => {
   const fixture = createFoldAcrossActivitiesFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FOLD_THREAD_ID);
     const task = byTaskId(view, "fold-bool-false-then-omitted");
 
@@ -887,7 +887,7 @@ test("isBackgrounded false survives a later activity that omits the field, rathe
 test("a wrong-typed isBackgrounded reported after a real boolean does not overwrite it, and is dropped rather than surfacing in adapterSpecific", async () => {
   const fixture = createFoldAcrossActivitiesFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FOLD_THREAD_ID);
     const task = byTaskId(view, "fold-bool-true-then-wrong-typed");
 
@@ -902,7 +902,7 @@ test("a wrong-typed isBackgrounded reported after a real boolean does not overwr
 test("a numeric taskId is emitted as a string, and a numeric parentAgentId still resolves against it", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TYPE_COERCION_THREAD_ID);
 
     const numericRoot = byTaskId(view, "42");
@@ -918,7 +918,7 @@ test("a numeric taskId is emitted as a string, and a numeric parentAgentId still
 test("tree paging that excludes a resolved parent surfaces the child at the top level and emits PARENT_OUT_OF_PAGE", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const page = await client.listParticipants(TREE_THREAD_ID, { tree: true, limit: 1, offset: 1 });
 
     // Ascending order is root-task, child-task, grandchild-task, second-child-task,
@@ -939,7 +939,7 @@ test("tree paging that excludes a resolved parent surfaces the child at the top 
 test("a parent whose own activities live in a different turn produces PARENT_OUT_OF_SELECTION, not UNRESOLVED_PARENT, under a turn selection", async () => {
   const fixture = createTurnScopedFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(
       TURN_SCOPED_THREAD_ID,
       { turnId: TURN_SCOPED_TURN_2, tree: true },
@@ -973,7 +973,7 @@ test("a parent whose own activities live in a different turn produces PARENT_OUT
 test("the same turn-scoped fixture read without a turn selection nests normally with a real path", async () => {
   const fixture = createTurnScopedFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TURN_SCOPED_THREAD_ID);
 
     const a = byTaskId(view, "turn-scoped-a");
@@ -994,7 +994,7 @@ test("the same turn-scoped fixture read without a turn selection nests normally 
 test("a parent id that exists nowhere in the thread still yields UNRESOLVED_PARENT under a turn selection", async () => {
   const fixture = createTurnScopedFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(
       TURN_SCOPED_GHOST_THREAD_ID,
       { turnId: TURN_SCOPED_GHOST_TURN },
@@ -1019,7 +1019,7 @@ test("a parent id that exists nowhere in the thread still yields UNRESOLVED_PARE
 test("an exact turnId that matches no turn emits TURN_NOT_FOUND with an empty participants list", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID, { turnId: "does-not-exist" });
 
     assert.equal(view.selection.kind, "turn");
@@ -1038,7 +1038,7 @@ test("an exact turnId that matches no turn emits TURN_NOT_FOUND with an empty pa
 test("a turn-window offset past the end of the thread is a silent empty page, not TURN_NOT_FOUND", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(FLAT_THREAD_ID, { turnLimit: 1, turnOffset: 50 });
 
     assert.equal(view.selection.kind, "turn-window");
@@ -1053,7 +1053,7 @@ test("a turn-window offset past the end of the thread is a silent empty page, no
 test("--tree without paging emits no PARENT_OUT_OF_PAGE warning", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const view = await client.listParticipants(TREE_THREAD_ID, { tree: true });
 
     assert.equal(view.warnings.some((entry) => entry.code === "PARENT_OUT_OF_PAGE"), false);
@@ -1119,7 +1119,7 @@ test("path assignment on a long explicit parent chain does not recurse", () => {
 test("every fixture thread's envelope, flat and --tree, validates against schemas/participants.v1.json", async () => {
   const fixture = createParticipantFixture();
   try {
-    const client = await createT3SessionClient({ db: fixture.databasePath });
+    const client = await createT3ThreadClient({ db: fixture.databasePath });
     const threadIds = [
       FLAT_THREAD_ID,
       TREE_THREAD_ID,

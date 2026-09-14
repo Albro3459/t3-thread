@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://t3-session.dev/schemas/participants.v1.json",
-  "title": "t3-session thread participants",
+  "$id": "https://t3-thread.dev/schemas/participants.v1.json",
+  "title": "t3-thread thread participants",
   "description": "A flat view of the task participants in one thread, folded from explicit task.* activities. Hierarchy is present only where the projection explicitly recorded a resolvable parent; it is never inferred from timestamps, activity order, or identifier shape. Check hierarchyAvailable before presenting a tree.",
   "type": "object",
   "required": [
@@ -16,7 +16,7 @@
     "warnings"
   ],
   "properties": {
-    "schemaVersion": { "const": "t3-session.participants.v1" },
+    "schemaVersion": { "const": "t3-thread.participants.v1" },
     "toolVersion": { "type": "string" },
     "threadId": { "type": ["string", "null"] },
     "ordering": {

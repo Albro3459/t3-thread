@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://t3-session.dev/schemas/list.v1.json",
-  "title": "t3-session normalized thread list",
+  "$id": "https://t3-thread.dev/schemas/list.v1.json",
+  "title": "t3-thread normalized thread list",
   "description": "Paginated thread summaries returned by the list command. Thread summaries are metadata only and never contain message or activity text.",
   "type": "object",
   "required": [
@@ -16,7 +16,7 @@
     "threads"
   ],
   "properties": {
-    "schemaVersion": { "const": "t3-session.list.v1" },
+    "schemaVersion": { "const": "t3-thread.list.v1" },
     "toolVersion": { "type": "string" },
     "filters": {
       "type": "object",

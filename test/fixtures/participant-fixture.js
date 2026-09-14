@@ -115,7 +115,7 @@ export function prepareActivityInsert(database) {
 }
 
 export function createParticipantFixture() {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-session-participants-"));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "t3-thread-participants-"));
   const databasePath = path.join(directory, "state.sqlite");
   const database = new DatabaseSync(databasePath);
 

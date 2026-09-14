@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://t3-session.dev/schemas/find.v1.json",
-  "title": "t3-session normalized thread search results",
+  "$id": "https://t3-thread.dev/schemas/find.v1.json",
+  "title": "t3-thread normalized thread search results",
   "description": "Thread summaries matched by title search. Thread summaries are metadata only and never contain message or activity text. Shares its threadSummary shape with list.v1.json.",
   "type": "object",
   "required": [
@@ -13,7 +13,7 @@
     "threads"
   ],
   "properties": {
-    "schemaVersion": { "const": "t3-session.find.v1" },
+    "schemaVersion": { "const": "t3-thread.find.v1" },
     "toolVersion": { "type": "string" },
     "filters": {
       "type": "object",

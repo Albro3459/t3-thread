@@ -1,6 +1,6 @@
 {
-  "name": "@albro3459/t3-session",
-  "version": "0.2.0",
+  "name": "@albro3459/t3-thread",
+  "version": "0.2.1",
   "description": "Read-only local retrieval of T3 Code conversation threads",
   "author": "Alexander Brodsky",
   "license": "MIT",
@@ -9,7 +9,7 @@
     "node": ">=22.16.0"
   },
   "bin": {
-    "t3-session": "scripts/t3-session.js"
+    "t3-thread": "scripts/t3-thread.js"
   },
   "exports": {
     ".": "./src/index.js"

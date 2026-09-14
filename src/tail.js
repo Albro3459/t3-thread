@@ -7,7 +7,7 @@ import { chronologicalThreadEntries } from "./record-order.js";
 import { readThreadCycleFromDatabase } from "./sqlite-store.js";
 import { VERSION } from "./version.js";
 
-export const TAIL_SCHEMA_VERSION = "t3-session.tail-record.v1";
+export const TAIL_SCHEMA_VERSION = "t3-thread.tail-record.v1";
 
 export const TAIL_OPERATIONS = Object.freeze(["upsert", "live-state", "end"]);
 
@@ -133,7 +133,7 @@ function* runCycle(thread, { threadId, observedAt, cycle, previousState }) {
   }
 }
 
-// Yields t3-session.tail-record.v1 objects and always terminates with exactly one end
+// Yields t3-thread.tail-record.v1 objects and always terminates with exactly one end
 // record (the sole exception being the fatal fourth consecutive read failure, which throws
 // DatabaseUnavailableError instead, since no end reason exists for a database that never
 // recovers). Each cycle opens a fresh read-only connection through readCycle, so a
